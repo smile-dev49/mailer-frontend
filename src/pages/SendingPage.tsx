@@ -242,8 +242,9 @@ export function SendingPage() {
           disabled={sending}
         />
         <p className="field-hint" style={{ marginBottom: "1rem" }}>
-          Stats and send apply to users matching the filters above (pending = not yet
-          sent).
+          Mail list uses the filters above. <strong>Pending</strong>, <strong>Sent</strong>,
+          and sent history are per active mail worker — the same email can be sent again
+          by a different worker.
         </p>
         {stats && (
           <div className="stats-grid">
@@ -284,6 +285,14 @@ export function SendingPage() {
             Refresh
           </button>
         </div>
+        {activeWorker && sent.length === 0 && (
+          <p className="field-hint">
+            No sent history for{" "}
+            {[activeWorker.first_name, activeWorker.last_name].filter(Boolean).join(" ") ||
+              activeWorker.gmail_email}{" "}
+            yet.
+          </p>
+        )}
         {sent.length > 0 && (
           <div className="data-table-wrap sent-list">
             <table className="data-table">
@@ -297,7 +306,7 @@ export function SendingPage() {
               </thead>
               <tbody>
                 {sent.map((row) => (
-                  <tr key={row.email + row.sent_at}>
+                  <tr key={`${row.email}-${row.mail_worker_id ?? ""}-${row.sent_at}`}>
                     <td>{row.email}</td>
                     <td>{row.name ?? "—"}</td>
                     <td>{row.sender_label ?? "—"}</td>
