@@ -5,6 +5,24 @@ export interface MailSettings {
   send_delay_seconds: number;
 }
 
+export interface MailWorkerConfig {
+  gmail_email: string;
+  app_password_set: boolean;
+  subject: string;
+  content: string;
+  sending_limit: number;
+  send_delay_seconds: number;
+}
+
+export interface MailWorkerSavePayload {
+  gmail_email: string;
+  app_password?: string;
+  subject: string;
+  content: string;
+  sending_limit: number;
+  send_delay_seconds: number;
+}
+
 export interface TokenItem {
   id: number;
   label: string;

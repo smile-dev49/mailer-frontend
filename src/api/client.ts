@@ -1,7 +1,8 @@
 import type {
   MailSendResult,
-  MailSettings,
   MailStats,
+  MailWorkerConfig,
+  MailWorkerSavePayload,
   ScraperStatus,
   SentMailItem,
   TokenItem,
@@ -53,24 +54,11 @@ export const api = {
       body: JSON.stringify({ max_per_location }),
     }),
 
-  getMailSettings: () => request<MailSettings>("/api/settings"),
-  saveMailSettings: (body: Record<string, unknown>) =>
-    request<MailSettings>("/api/settings", {
+  getMailWorker: () => request<MailWorkerConfig>("/api/mail-worker"),
+  saveMailWorker: (body: MailWorkerSavePayload) =>
+    request<MailWorkerConfig>("/api/mail-worker", {
       method: "PUT",
       body: JSON.stringify(body),
-    }),
-
-  getSubject: () => request<{ content: string }>("/api/templates/subject"),
-  saveSubject: (content: string) =>
-    request<{ content: string }>("/api/templates/subject", {
-      method: "PUT",
-      body: JSON.stringify({ content }),
-    }),
-  getContent: () => request<{ content: string }>("/api/templates/content"),
-  saveContent: (content: string) =>
-    request<{ content: string }>("/api/templates/content", {
-      method: "PUT",
-      body: JSON.stringify({ content }),
     }),
 
   getMailStats: () => request<MailStats>("/api/mail/stats"),
