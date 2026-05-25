@@ -103,15 +103,10 @@ export function ScrapingPage() {
     return () => clearInterval(id);
   }, [status?.running, loadUsers, filters]);
 
-  function applyFilters() {
+  function handleFiltersChange(next: UserFilters) {
+    setFilters(next);
     setPage(1);
-    loadUsers(1, filters).catch(() => {});
-  }
-
-  function clearFilters() {
-    setFilters({});
-    setPage(1);
-    loadUsers(1, {}).catch(() => {});
+    loadUsers(1, next).catch(() => {});
   }
 
   async function startScraper() {
@@ -245,14 +240,12 @@ export function ScrapingPage() {
         <UserLocationFilters
           filters={filters}
           options={filterOptions}
-          onChange={setFilters}
-          onApply={applyFilters}
-          onClear={clearFilters}
+          onFiltersChange={handleFiltersChange}
         />
 
         {users.length === 0 ? (
           <p className="field-hint">
-            No users match filters. Run the scraper or clear filters.
+            No users match filters. Run the scraper or change the filters above.
           </p>
         ) : (
           <>

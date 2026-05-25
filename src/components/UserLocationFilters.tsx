@@ -1,22 +1,50 @@
+import { useEffect, useRef, useState } from "react";
 import type { UserFilterOptions, UserFilters } from "../types";
 
 type Props = {
   filters: UserFilters;
   options: UserFilterOptions;
-  onChange: (filters: UserFilters) => void;
-  onApply: () => void;
-  onClear: () => void;
+  onFiltersChange: (filters: UserFilters) => void;
   disabled?: boolean;
 };
+
+const TEXT_DEBOUNCE_MS = 400;
 
 export function UserLocationFilters({
   filters,
   options,
-  onChange,
-  onApply,
-  onClear,
+  onFiltersChange,
   disabled,
 }: Props) {
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [locationText, setLocationText] = useState(filters.location ?? "");
+
+  useEffect(() => {
+    setLocationText(filters.location ?? "");
+  }, [filters.location]);
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  function applyNow(next: UserFilters) {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+    onFiltersChange(next);
+  }
+
+  function applyTextDebounced(next: UserFilters) {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      debounceRef.current = null;
+      onFiltersChange(next);
+    }, TEXT_DEBOUNCE_MS);
+  }
+
   return (
     <div className="filter-bar">
       <div className="row">
@@ -25,7 +53,10 @@ export function UserLocationFilters({
           <select
             value={filters.scrape_country ?? ""}
             onChange={(e) =>
-              onChange({ ...filters, scrape_country: e.target.value || undefined })
+              applyNow({
+                ...filters,
+                scrape_country: e.target.value || undefined,
+              })
             }
             disabled={disabled}
           >
@@ -42,7 +73,10 @@ export function UserLocationFilters({
           <select
             value={filters.search_location ?? ""}
             onChange={(e) =>
-              onChange({ ...filters, search_location: e.target.value || undefined })
+              applyNow({
+                ...filters,
+                search_location: e.target.value || undefined,
+              })
             }
             disabled={disabled}
           >
@@ -59,21 +93,18 @@ export function UserLocationFilters({
           <input
             type="text"
             placeholder="e.g. London, US, Tokyo"
-            value={filters.location ?? ""}
-            onChange={(e) =>
-              onChange({ ...filters, location: e.target.value || undefined })
-            }
+            value={locationText}
+            onChange={(e) => {
+              const value = e.target.value;
+              setLocationText(value);
+              applyTextDebounced({
+                ...filters,
+                location: value || undefined,
+              });
+            }}
             disabled={disabled}
           />
         </div>
-      </div>
-      <div className="actions">
-        <button type="button" className="btn btn-primary" onClick={onApply} disabled={disabled}>
-          Apply filters
-        </button>
-        <button type="button" className="btn btn-secondary" onClick={onClear} disabled={disabled}>
-          Clear
-        </button>
       </div>
     </div>
   );

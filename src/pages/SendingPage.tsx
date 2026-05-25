@@ -52,14 +52,18 @@ export function SendingPage() {
     refresh().catch(() => {});
   }, [refresh]);
 
-  function applyFilters() {
-    refresh().catch(() => {});
-  }
-
-  function clearFilters() {
-    setFilters({});
-    refresh().catch(() => {});
-  }
+  const handleFiltersChange = useCallback(
+    (next: UserFilters) => {
+      setFilters(next);
+      Promise.all([api.getMailStats(next), api.listSent(30)])
+        .then(([s, list]) => {
+          setStats(s);
+          setSent(list);
+        })
+        .catch(() => {});
+    },
+    []
+  );
 
   function openRegister() {
     setModalMode("create");
@@ -234,9 +238,7 @@ export function SendingPage() {
         <UserLocationFilters
           filters={filters}
           options={filterOptions}
-          onChange={setFilters}
-          onApply={applyFilters}
-          onClear={clearFilters}
+          onFiltersChange={handleFiltersChange}
           disabled={sending}
         />
         <p className="field-hint" style={{ marginBottom: "1rem" }}>
