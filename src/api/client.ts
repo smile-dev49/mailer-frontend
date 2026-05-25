@@ -2,6 +2,7 @@ import type {
   MailSendResult,
   MailStats,
   MailWorkerConfig,
+  MailWorkerListItem,
   MailWorkerSavePayload,
   ScraperStatus,
   SentMailItem,
@@ -54,11 +55,22 @@ export const api = {
       body: JSON.stringify({ max_per_location }),
     }),
 
-  getMailWorker: () => request<MailWorkerConfig>("/api/mail-worker"),
-  saveMailWorker: (body: MailWorkerSavePayload) =>
+  listMailWorkers: () => request<MailWorkerListItem[]>("/api/mail-worker"),
+  getMailWorkerById: (id: number) =>
+    request<MailWorkerConfig>(`/api/mail-worker/${id}`),
+  createMailWorker: (body: MailWorkerSavePayload) =>
     request<MailWorkerConfig>("/api/mail-worker", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  updateMailWorker: (id: number, body: MailWorkerSavePayload) =>
+    request<MailWorkerConfig>(`/api/mail-worker/${id}`, {
       method: "PUT",
       body: JSON.stringify(body),
+    }),
+  activateMailWorker: (id: number) =>
+    request<MailWorkerConfig>(`/api/mail-worker/${id}/activate`, {
+      method: "POST",
     }),
 
   getMailStats: () => request<MailStats>("/api/mail/stats"),

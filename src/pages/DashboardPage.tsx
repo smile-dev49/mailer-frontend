@@ -32,8 +32,8 @@ export function DashboardPage() {
         />
         <StepCard
           num="3"
-          title="Sending Message"
-          description="Configure Gmail, edit templates, and send mail in batches."
+          title="Message Setting"
+          description="Register Gmail and message templates, then send mail in batches."
           link={ROUTES.sendingMessage}
         />
         <StepCard

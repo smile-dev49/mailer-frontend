@@ -11,5 +11,5 @@ export const NAV_ITEMS: { path: RoutePath; label: string; icon: string }[] = [
   { path: ROUTES.dashboard, label: "Dashboard", icon: "◫" },
   { path: ROUTES.registerToken, label: "Register Token", icon: "🔑" },
   { path: ROUTES.scrapingSetting, label: "Scraping Setting", icon: "⌕" },
-  { path: ROUTES.sendingMessage, label: "Sending Message", icon: "✉" },
+  { path: ROUTES.sendingMessage, label: "Message Setting", icon: "✉" },
 ];

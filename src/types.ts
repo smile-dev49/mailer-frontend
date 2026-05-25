@@ -5,13 +5,28 @@ export interface MailSettings {
   send_delay_seconds: number;
 }
 
+export interface MailWorkerListItem {
+  id: number;
+  gmail_email: string;
+  subject_preview: string;
+  sending_limit: number;
+  send_delay_seconds: number;
+  app_password_set: boolean;
+  is_active: boolean;
+  updated_at: string;
+}
+
 export interface MailWorkerConfig {
+  id: number;
   gmail_email: string;
   app_password_set: boolean;
   subject: string;
   content: string;
   sending_limit: number;
   send_delay_seconds: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface MailWorkerSavePayload {
@@ -21,6 +36,7 @@ export interface MailWorkerSavePayload {
   content: string;
   sending_limit: number;
   send_delay_seconds: number;
+  set_active?: boolean;
 }
 
 export interface TokenItem {
