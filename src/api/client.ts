@@ -1,5 +1,5 @@
 import type {
-  MailSendResult,
+  MailSendStatus,
   MailStats,
   MailWorkerConfig,
   MailWorkerListItem,
@@ -105,8 +105,9 @@ export const api = {
     return request<MailStats>(`/api/mail/stats${q ? `?${q}` : ""}`);
   },
 
-  sendMailBatch: (limit?: number, filters?: UserFilters) =>
-    request<MailSendResult>("/api/mail/send", {
+  getMailSendStatus: () => request<MailSendStatus>("/api/mail/send/status"),
+  startMailBatch: (limit?: number, filters?: UserFilters) =>
+    request<MailSendStatus>("/api/mail/send", {
       method: "POST",
       body: JSON.stringify({
         limit: limit ?? null,

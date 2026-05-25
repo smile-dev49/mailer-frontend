@@ -104,12 +104,26 @@ export interface MailStats {
   storage: string;
 }
 
-export interface MailSendResult {
-  sent_count: number;
-  failed_count: number;
-  total_sent: number;
-  pending: number;
+export interface MailSendLiveItem {
+  email: string;
+  name: string | null;
+  status: "sent" | "failed" | "skipped" | string;
+  error?: string | null;
+  sent_at: string;
+}
+
+export interface MailSendStatus {
+  running: boolean;
   message: string;
+  current_email: string;
+  sent_this_run: number;
+  failed_this_run: number;
+  skipped_this_run: number;
+  batch_total: number;
+  pending: number;
+  total_sent: number;
+  live_feed: MailSendLiveItem[];
+  error: string | null;
 }
 
 export interface ScraperLiveUser {

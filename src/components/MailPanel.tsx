@@ -25,7 +25,7 @@ export function MailPanel() {
     setSending(true);
     setMessage(null);
     try {
-      const result = await api.sendMailBatch(
+      const result = await api.startMailBatch(
         limit === "" ? undefined : Number(limit)
       );
       setMessage({ type: "ok", text: result.message });

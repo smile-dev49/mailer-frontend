@@ -546,6 +546,45 @@
   color: #60a5fa;
 }
 
+.panel--nested {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #2d3139;
+}
+
+.panel--nested h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+.mail-send-status-badge {
+  margin-left: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+
+.mail-send-status-badge--sent {
+  background: rgba(52, 168, 83, 0.2);
+  color: #81c995;
+}
+
+.mail-send-status-badge--failed {
+  background: rgba(234, 67, 53, 0.2);
+  color: #f28b82;
+}
+
+.mail-send-status-badge--skipped {
+  background: rgba(154, 160, 166, 0.15);
+  color: #9aa0a6;
+}
+
+.live-feed__item--failed {
+  border-color: rgba(234, 67, 53, 0.35);
+}
+
 .panel__toolbar {
   display: flex;
   align-items: center;
