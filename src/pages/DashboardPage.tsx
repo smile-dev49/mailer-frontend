@@ -27,7 +27,7 @@ export function DashboardPage() {
         <StepCard
           num="2"
           title="Scraping Setting"
-          description="Run the scraper to collect US-based GitHub users (2022+) into the users table."
+          description="Run the scraper, watch live results, and browse scraped users in a table."
           link={ROUTES.scrapingSetting}
         />
         <StepCard

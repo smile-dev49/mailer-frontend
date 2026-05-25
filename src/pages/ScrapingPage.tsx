@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
+import { ScrapedUserModal } from "../components/ScrapedUserModal";
 import { ROUTES } from "../routes";
 import type { GitHubUser, ScraperLiveUser, ScraperStatus } from "../types";
+
+const PAGE_SIZE = 20;
 
 export function ScrapingPage() {
   const [hasToken, setHasToken] = useState(false);
@@ -14,14 +17,24 @@ export function ScrapingPage() {
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(
     null
   );
+  const [viewUser, setViewUser] = useState<GitHubUser | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
   const runningRef = useRef(false);
+  const wasRunningRef = useRef(false);
 
   const loadUsers = useCallback(async (p: number) => {
-    const data = await api.getUsers(p, 20);
+    const data = await api.getUsers(p, PAGE_SIZE);
     setUsers(data.items);
     setTotalUsers(data.total);
     setPage(data.page);
   }, []);
+
+  const refreshAll = useCallback(async () => {
+    await Promise.all([
+      api.getScraperStatus().then(setStatus),
+      loadUsers(page),
+    ]);
+  }, [loadUsers, page]);
 
   useEffect(() => {
     api.getTokens().then((t) => setHasToken(t.has_active_token));
@@ -32,7 +45,6 @@ export function ScrapingPage() {
         .getScraperStatus()
         .then((s) => {
           setStatus(s);
-          setTotalUsers(s.db_total);
         })
         .catch(() => {});
 
@@ -50,6 +62,20 @@ export function ScrapingPage() {
     runningRef.current = status?.running ?? false;
   }, [status?.running]);
 
+  useEffect(() => {
+    const running = status?.running ?? false;
+    if (wasRunningRef.current && !running) {
+      loadUsers(1).catch(() => {});
+    }
+    wasRunningRef.current = running;
+  }, [status?.running, loadUsers]);
+
+  useEffect(() => {
+    if (!status?.running) return;
+    const id = setInterval(() => loadUsers(1).catch(() => {}), 5000);
+    return () => clearInterval(id);
+  }, [status?.running, loadUsers]);
+
   async function startScraper() {
     setMessage(null);
     try {
@@ -65,13 +91,22 @@ export function ScrapingPage() {
     }
   }
 
-  const totalPages = Math.max(1, Math.ceil(totalUsers / 20));
+  function openView(user: GitHubUser) {
+    setViewUser(user);
+    setModalOpen(true);
+  }
+
+  const totalPages = Math.max(1, Math.ceil(totalUsers / PAGE_SIZE));
+  const dbTotal = status?.db_total ?? totalUsers;
 
   return (
     <div className="page">
       <header className="page-header">
         <h2>Scraping Setting</h2>
-        <p>Run the GitHub scraper and watch status and results as they arrive</p>
+        <p>
+          Run the GitHub scraper, watch live results, and browse scraped users in the
+          table. Click View for full details.
+        </p>
       </header>
 
       {message && (
@@ -88,8 +123,20 @@ export function ScrapingPage() {
       )}
 
       <div className="panel">
-        <h3>Run scraper</h3>
-        <ScraperStatusBox status={status} />
+        <div className="panel__toolbar">
+          <h3>Run scraper</h3>
+          <div className="panel__toolbar-actions actions">
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={startScraper}
+              disabled={status?.running || !hasToken}
+            >
+              {status?.running ? "Scraping…" : "Start scraper"}
+            </button>
+          </div>
+        </div>
+        <ScraperStatusBox status={status} dbTotal={dbTotal} />
         <div className="field">
           <label>Max users per location</label>
           <input
@@ -99,23 +146,6 @@ export function ScrapingPage() {
             value={maxPerLocation}
             onChange={(e) => setMaxPerLocation(Number(e.target.value))}
           />
-        </div>
-        <div className="actions">
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={startScraper}
-            disabled={status?.running || !hasToken}
-          >
-            {status?.running ? "Scraping…" : "Start scraper"}
-          </button>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => loadUsers(page).catch(() => {})}
-          >
-            Refresh users
-          </button>
         </div>
       </div>
 
@@ -132,37 +162,107 @@ export function ScrapingPage() {
       </div>
 
       <div className="panel">
-        <h3>All scraped users ({totalUsers})</h3>
-        <UsersTable users={users} />
-        {totalPages > 1 && (
-          <div className="actions">
-            <button
-              type="button"
-              className="btn btn-secondary"
-              disabled={page <= 1}
-              onClick={() => loadUsers(page - 1).catch(() => {})}
-            >
-              Previous
-            </button>
-            <span className="field-hint">
-              Page {page} of {totalPages}
-            </span>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              disabled={page >= totalPages}
-              onClick={() => loadUsers(page + 1).catch(() => {})}
-            >
-              Next
-            </button>
-          </div>
+        <div className="panel__toolbar">
+          <h3>Scraped users ({totalUsers})</h3>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => refreshAll().catch(() => {})}
+          >
+            Refresh
+          </button>
+        </div>
+
+        {users.length === 0 ? (
+          <p className="field-hint">
+            No users in the database yet. Register a token and start the scraper.
+          </p>
+        ) : (
+          <>
+            <div className="data-table-wrap">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Email</th>
+                    <th>Name</th>
+                    <th>Location</th>
+                    <th>Updated</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((u) => (
+                    <tr key={u.email}>
+                      <td>{u.email}</td>
+                      <td>{u.name ?? "—"}</td>
+                      <td className="cell-truncate" title={u.location ?? undefined}>
+                        {u.location ?? "—"}
+                      </td>
+                      <td>
+                        {u.updated_at
+                          ? new Date(u.updated_at).toLocaleString()
+                          : "—"}
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => openView(u)}
+                        >
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {totalPages > 1 && (
+              <div className="actions">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  disabled={page <= 1}
+                  onClick={() => loadUsers(page - 1).catch(() => {})}
+                >
+                  Previous
+                </button>
+                <span className="field-hint">
+                  Page {page} of {totalPages}
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  disabled={page >= totalPages}
+                  onClick={() => loadUsers(page + 1).catch(() => {})}
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
+
+      <ScrapedUserModal
+        open={modalOpen}
+        user={viewUser}
+        onClose={() => {
+          setModalOpen(false);
+          setViewUser(null);
+        }}
+      />
     </div>
   );
 }
 
-function ScraperStatusBox({ status }: { status: ScraperStatus | null }) {
+function ScraperStatusBox({
+  status,
+  dbTotal,
+}: {
+  status: ScraperStatus | null;
+  dbTotal: number;
+}) {
   if (!status) return null;
 
   const locationProgress =
@@ -210,7 +310,7 @@ function ScraperStatusBox({ status }: { status: ScraperStatus | null }) {
         <dt>Collected this run</dt>
         <dd>{status.users_collected}</dd>
         <dt>Total in database</dt>
-        <dd>{status.db_total}</dd>
+        <dd>{dbTotal}</dd>
       </dl>
 
       {status.error && <p className="text-error">{status.error}</p>}
@@ -260,47 +360,5 @@ function LiveFeed({
         </li>
       ))}
     </ol>
-  );
-}
-
-function UsersTable({ users }: { users: GitHubUser[] }) {
-  if (users.length === 0) {
-    return (
-      <p className="field-hint">
-        No users yet. Register a token and run the scraper.
-      </p>
-    );
-  }
-  return (
-    <div className="data-table-wrap">
-      <table className="data-table">
-        <thead>
-          <tr>
-            <th>Email</th>
-            <th>Name</th>
-            <th>Location</th>
-            <th>Profile</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((u) => (
-            <tr key={u.email}>
-              <td>{u.email}</td>
-              <td>{u.name ?? "—"}</td>
-              <td>{u.location ?? "—"}</td>
-              <td>
-                {u.html_url ? (
-                  <a href={u.html_url} target="_blank" rel="noreferrer">
-                    GitHub
-                  </a>
-                ) : (
-                  "—"
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
   );
 }
