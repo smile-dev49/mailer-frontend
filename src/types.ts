@@ -7,6 +7,8 @@ export interface MailSettings {
 
 export interface MailWorkerListItem {
   id: number;
+  first_name: string;
+  last_name: string;
   gmail_email: string;
   subject_preview: string;
   sending_limit: number;
@@ -18,6 +20,8 @@ export interface MailWorkerListItem {
 
 export interface MailWorkerConfig {
   id: number;
+  first_name: string;
+  last_name: string;
   gmail_email: string;
   app_password_set: boolean;
   subject: string;
@@ -30,6 +34,8 @@ export interface MailWorkerConfig {
 }
 
 export interface MailWorkerSavePayload {
+  first_name: string;
+  last_name: string;
   gmail_email: string;
   app_password?: string;
   subject: string;

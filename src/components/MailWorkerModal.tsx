@@ -25,6 +25,8 @@ type Props = {
 };
 
 const emptyForm = {
+  firstName: "",
+  lastName: "",
   gmailEmail: "",
   appPassword: "",
   appPasswordSet: false,
@@ -44,6 +46,8 @@ export function MailWorkerModal({
 }: Props) {
   const [editing, setEditing] = useState(mode === "create");
   const [loading, setLoading] = useState(false);
+  const [firstName, setFirstName] = useState(emptyForm.firstName);
+  const [lastName, setLastName] = useState(emptyForm.lastName);
   const [gmailEmail, setGmailEmail] = useState(emptyForm.gmailEmail);
   const [appPassword, setAppPassword] = useState("");
   const [appPasswordSet, setAppPasswordSet] = useState(false);
@@ -64,6 +68,8 @@ export function MailWorkerModal({
     setError(null);
 
     if (mode === "create") {
+      setFirstName(emptyForm.firstName);
+      setLastName(emptyForm.lastName);
       setGmailEmail(emptyForm.gmailEmail);
       setAppPassword("");
       setAppPasswordSet(false);
@@ -91,6 +97,8 @@ export function MailWorkerModal({
   }, [open, mode, workerId]);
 
   function applyConfig(cfg: MailWorkerConfig) {
+    setFirstName(cfg.first_name);
+    setLastName(cfg.last_name);
     setGmailEmail(cfg.gmail_email);
     setAppPasswordSet(cfg.app_password_set);
     setSubject(cfg.subject);
@@ -118,6 +126,8 @@ export function MailWorkerModal({
     setError(null);
 
     const payload: MailWorkerSavePayload = {
+      first_name: firstName.trim(),
+      last_name: lastName.trim(),
       gmail_email: gmailEmail.trim(),
       app_password: appPassword.trim() || undefined,
       subject,
@@ -185,6 +195,37 @@ export function MailWorkerModal({
                 </button>
               </div>
             )}
+
+            <div className="row">
+              <div className="field">
+                <label>First name</label>
+                {isViewOnly ? (
+                  <p className="modal__readonly">{firstName || "—"}</p>
+                ) : (
+                  <input
+                    type="text"
+                    required
+                    placeholder="John"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                  />
+                )}
+              </div>
+              <div className="field">
+                <label>Last name</label>
+                {isViewOnly ? (
+                  <p className="modal__readonly">{lastName || "—"}</p>
+                ) : (
+                  <input
+                    type="text"
+                    required
+                    placeholder="Doe"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                  />
+                )}
+              </div>
+            </div>
 
             <div className="field">
               <label>Gmail address</label>

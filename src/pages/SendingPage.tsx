@@ -109,14 +109,16 @@ export function SendingPage() {
 
         {workers.length === 0 ? (
           <p className="field-hint">
-            No message settings yet. Click <strong>Register</strong> to add Gmail,
-            app password, subject, and content.
+            No message settings yet. Click <strong>Register</strong> to add your
+            name, Gmail, app password, subject, and content.
           </p>
         ) : (
           <div className="data-table-wrap">
             <table className="data-table">
               <thead>
                 <tr>
+                  <th>First name</th>
+                  <th>Last name</th>
                   <th>Gmail</th>
                   <th>Subject</th>
                   <th>Per run</th>
@@ -129,6 +131,8 @@ export function SendingPage() {
               <tbody>
                 {workers.map((w) => (
                   <tr key={w.id} className={w.is_active ? "row-active" : undefined}>
+                    <td>{w.first_name || "—"}</td>
+                    <td>{w.last_name || "—"}</td>
                     <td>{w.gmail_email}</td>
                     <td className="cell-truncate" title={w.subject_preview}>
                       {w.subject_preview || "—"}
@@ -186,7 +190,13 @@ export function SendingPage() {
         )}
         {activeWorker && (
           <p className="field-hint" style={{ marginBottom: "1rem" }}>
-            Active sender: <strong>{activeWorker.gmail_email}</strong> (limit{" "}
+            Active sender:{" "}
+            <strong>
+              {[activeWorker.first_name, activeWorker.last_name]
+                .filter(Boolean)
+                .join(" ") || activeWorker.gmail_email}
+            </strong>{" "}
+            ({activeWorker.gmail_email}, limit{" "}
             {activeWorker.sending_limit} per run)
           </p>
         )}
