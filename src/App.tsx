@@ -1,22 +1,25 @@
-import { useState } from "react";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import "./App.css";
-import { Sidebar } from "./components/Sidebar";
+import { Layout } from "./components/Layout";
 import { DashboardPage } from "./pages/DashboardPage";
+import { RegisterTokenPage } from "./pages/RegisterTokenPage";
 import { ScrapingPage } from "./pages/ScrapingPage";
 import { SendingPage } from "./pages/SendingPage";
-import type { PageId } from "./types";
+import { ROUTES } from "./routes";
 
 export default function App() {
-  const [page, setPage] = useState<PageId>("dashboard");
-
   return (
-    <div className="layout">
-      <Sidebar page={page} onNavigate={setPage} />
-      <main className="main-content">
-        {page === "dashboard" && <DashboardPage />}
-        {page === "scraping" && <ScrapingPage />}
-        {page === "sending" && <SendingPage />}
-      </main>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Navigate to={ROUTES.dashboard} replace />} />
+          <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="register-token" element={<RegisterTokenPage />} />
+          <Route path="scraping-setting" element={<ScrapingPage />} />
+          <Route path="sending-message" element={<SendingPage />} />
+          <Route path="*" element={<Navigate to={ROUTES.dashboard} replace />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }

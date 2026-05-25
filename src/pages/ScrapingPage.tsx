@@ -1,9 +1,10 @@
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../api/client";
+import { ROUTES } from "../routes";
 import type { GitHubUser, ScraperStatus } from "../types";
 
 export function ScrapingPage() {
-  const [token, setToken] = useState("");
   const [hasToken, setHasToken] = useState(false);
   const [maxPerLocation, setMaxPerLocation] = useState(50);
   const [status, setStatus] = useState<ScraperStatus | null>(null);
@@ -13,7 +14,6 @@ export function ScrapingPage() {
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(
     null
   );
-  const [saving, setSaving] = useState(false);
 
   const loadUsers = useCallback(async (p: number) => {
     const data = await api.getUsers(p, 20);
@@ -30,25 +30,6 @@ export function ScrapingPage() {
     const id = setInterval(poll, 3000);
     return () => clearInterval(id);
   }, [loadUsers]);
-
-  async function saveToken(e: FormEvent) {
-    e.preventDefault();
-    setSaving(true);
-    setMessage(null);
-    try {
-      await api.saveToken(token.trim());
-      setHasToken(true);
-      setToken("");
-      setMessage({ type: "ok", text: "GitHub token saved to PostgreSQL (tokens table)" });
-    } catch (err) {
-      setMessage({
-        type: "err",
-        text: err instanceof Error ? err.message : "Save failed",
-      });
-    } finally {
-      setSaving(false);
-    }
-  }
 
   async function startScraper() {
     setMessage(null);
@@ -70,7 +51,7 @@ export function ScrapingPage() {
     <div className="page">
       <header className="page-header">
         <h2>Scraping Setting</h2>
-        <p>GitHub token, run scraper, view collected users</p>
+        <p>Run the GitHub scraper and view collected users</p>
       </header>
 
       {message && (
@@ -79,29 +60,12 @@ export function ScrapingPage() {
         </div>
       )}
 
-      <div className="panel">
-        <h3>GitHub access token</h3>
-        <form onSubmit={saveToken}>
-          <div className="field">
-            <label>Personal access token</label>
-            <input
-              type="password"
-              placeholder={hasToken ? "•••••••• (enter new to replace)" : "ghp_..."}
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              autoComplete="off"
-            />
-            <p className="field-hint">
-              Create at github.com/settings/tokens — stored in PostgreSQL tokens table
-            </p>
-          </div>
-          <div className="actions">
-            <button type="submit" className="btn btn-primary" disabled={saving || !token.trim()}>
-              {saving ? "Saving…" : "Save token"}
-            </button>
-          </div>
-        </form>
-      </div>
+      {!hasToken && (
+        <div className="alert alert-info">
+          No active GitHub token.{" "}
+          <Link to={ROUTES.registerToken}>Register Token</Link> first.
+        </div>
+      )}
 
       <div className="panel">
         <h3>Run scraper</h3>
@@ -192,7 +156,11 @@ function ScraperStatusBox({ status }: { status: ScraperStatus | null }) {
 
 function UsersTable({ users }: { users: GitHubUser[] }) {
   if (users.length === 0) {
-    return <p className="field-hint">No users yet. Save a token and run the scraper.</p>;
+    return (
+      <p className="field-hint">
+        No users yet. Register a token and run the scraper.
+      </p>
+    );
   }
   return (
     <div className="data-table-wrap">

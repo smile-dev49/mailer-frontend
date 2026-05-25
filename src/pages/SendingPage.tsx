@@ -1,10 +1,12 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../api/client";
+import { PasswordInput } from "../components/PasswordInput";
+import { ROUTES } from "../routes";
 import type { MailSendResult, MailSettings, MailStats, SentMailItem } from "../types";
 
 export function SendingPage() {
   const [settings, setSettings] = useState<MailSettings | null>(null);
-  const [googleEmail, setGoogleEmail] = useState("");
   const [googlePassword, setGooglePassword] = useState("");
   const [subject, setSubject] = useState("");
   const [content, setContent] = useState("");
@@ -26,7 +28,6 @@ export function SendingPage() {
     setStats(s);
     setSent(list);
     setSettings(st);
-    setGoogleEmail(st.google_email);
   }, []);
 
   useEffect(() => {
@@ -37,21 +38,18 @@ export function SendingPage() {
     });
   }, [refresh]);
 
-  async function saveGmail(e: FormEvent) {
+  async function saveAppPassword(e: FormEvent) {
     e.preventDefault();
-    setSaving("gmail");
+    if (!googlePassword.trim()) return;
+    setSaving("password");
     setMessage(null);
     try {
-      const body: Record<string, unknown> = { google_email: googleEmail };
-      if (googlePassword.trim()) body.google_password = googlePassword;
-      if (settings) {
-        body.sending_limit = settings.sending_limit;
-        body.send_delay_seconds = settings.send_delay_seconds;
-      }
-      const updated = await api.saveMailSettings(body);
+      const updated = await api.saveMailSettings({
+        google_password: googlePassword.trim(),
+      });
       setSettings(updated);
       setGooglePassword("");
-      setMessage({ type: "ok", text: "Gmail settings saved to backend/.env" });
+      setMessage({ type: "ok", text: "Gmail App password saved to backend/.env" });
     } catch (err) {
       setMessage({
         type: "err",
@@ -130,7 +128,7 @@ export function SendingPage() {
     <div className="page">
       <header className="page-header">
         <h2>Sending Message</h2>
-        <p>Gmail credentials, templates, and batch send</p>
+        <p>Templates and batch send. Gmail address from DB; App password in backend/.env</p>
       </header>
 
       {message && (
@@ -140,34 +138,45 @@ export function SendingPage() {
       )}
 
       <div className="panel">
-        <h3>Gmail (App password)</h3>
-        <form onSubmit={saveGmail}>
-          <div className="field">
-            <label>Gmail address</label>
-            <input
-              type="email"
-              value={googleEmail}
-              onChange={(e) => setGoogleEmail(e.target.value)}
-              required
-            />
+        <h3>Gmail address</h3>
+        {settings?.google_email ? (
+          <p className="prose">
+            From active token: <strong>{settings.google_email}</strong> — change on{" "}
+            <Link to={ROUTES.registerToken}>Register Token</Link>
+          </p>
+        ) : (
+          <div className="alert alert-info">
+            No Gmail address. <Link to={ROUTES.registerToken}>Register Token</Link> first.
           </div>
+        )}
+      </div>
+
+      <div className="panel">
+        <h3>Gmail App password</h3>
+        <p className="field-hint" style={{ marginBottom: "0.75rem" }}>
+          Not stored in the database. Set <code>GOOGLE_PASSWORD</code> in{" "}
+          <code>backend/.env</code> only.
+        </p>
+        <form onSubmit={saveAppPassword}>
           <div className="field">
             <label>Google App password</label>
-            <input
-              type="password"
+            <PasswordInput
               placeholder={
                 settings?.google_password_set
-                  ? "•••• •••• •••• •••• (leave blank to keep)"
+                  ? "xxxx xxxx xxxx xxxx (enter new to replace)"
                   : "xxxx xxxx xxxx xxxx"
               }
               value={googlePassword}
-              onChange={(e) => setGooglePassword(e.target.value)}
-              autoComplete="off"
+              onChange={setGooglePassword}
             />
           </div>
           <div className="actions">
-            <button type="submit" className="btn btn-primary" disabled={saving === "gmail"}>
-              {saving === "gmail" ? "Saving…" : "Save Gmail"}
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={saving === "password" || !googlePassword.trim()}
+            >
+              {saving === "password" ? "Saving…" : "Save App password"}
             </button>
           </div>
         </form>
@@ -281,7 +290,9 @@ export function SendingPage() {
             type="button"
             className="btn btn-primary"
             onClick={handleSend}
-            disabled={sending || !stats?.pending}
+            disabled={
+              sending || !stats?.pending || !settings?.google_email || !settings?.google_password_set
+            }
           >
             {sending ? "Sending…" : "Send next batch"}
           </button>

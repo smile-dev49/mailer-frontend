@@ -50,6 +50,9 @@
   color: #9aa0a6;
   text-align: left;
   font-size: 0.9rem;
+  text-decoration: none;
+  cursor: pointer;
+  box-sizing: border-box;
 }
 
 .sidebar-link:hover {
@@ -167,8 +170,27 @@
   font-weight: 500;
 }
 
+.step-card h3 a {
+  color: #fff;
+  text-decoration: none;
+}
+
+.step-card h3 a:hover {
+  color: #60a5fa;
+}
+
 .data-table a {
   color: #60a5fa;
+}
+
+.field-hint a,
+.panel a,
+.step-card h3 a {
+  color: #60a5fa;
+}
+
+.required {
+  color: #f87171;
 }
 
 .text-error {
@@ -208,6 +230,47 @@
   border-radius: 8px;
   background: #0f1117;
   color: #e8eaed;
+}
+
+.password-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrap .password-input {
+  width: 100%;
+  padding: 0.6rem 2.75rem 0.6rem 0.75rem;
+  border: 1px solid #2d3139;
+  border-radius: 8px;
+  background: #0f1117;
+  color: #e8eaed;
+  font-family: ui-monospace, monospace;
+  font-size: 0.9rem;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #9aa0a6;
+  cursor: pointer;
+}
+
+.password-toggle:hover {
+  color: #e8eaed;
+  background: #1a1d24;
+}
+
+.password-toggle:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
 }
 
 .field textarea {

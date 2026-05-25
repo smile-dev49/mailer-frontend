@@ -1,17 +1,7 @@
-import type { PageId } from "../types";
+import { NavLink } from "react-router-dom";
+import { NAV_ITEMS } from "../routes";
 
-const NAV: { id: PageId; label: string; icon: string }[] = [
-  { id: "dashboard", label: "Dashboard", icon: "◫" },
-  { id: "scraping", label: "Scraping Setting", icon: "⌕" },
-  { id: "sending", label: "Sending Message", icon: "✉" },
-];
-
-interface SidebarProps {
-  page: PageId;
-  onNavigate: (page: PageId) => void;
-}
-
-export function Sidebar({ page, onNavigate }: SidebarProps) {
+export function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
@@ -19,16 +9,17 @@ export function Sidebar({ page, onNavigate }: SidebarProps) {
         <p>Scrape → Send</p>
       </div>
       <nav className="sidebar-nav">
-        {NAV.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            className={`sidebar-link ${page === item.id ? "active" : ""}`}
-            onClick={() => onNavigate(item.id)}
+        {NAV_ITEMS.map((item) => (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            className={({ isActive }) =>
+              `sidebar-link${isActive ? " active" : ""}`
+            }
           >
             <span className="sidebar-icon">{item.icon}</span>
             {item.label}
-          </button>
+          </NavLink>
         ))}
       </nav>
     </aside>

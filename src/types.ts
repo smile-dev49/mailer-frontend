@@ -9,6 +9,7 @@ export interface TokenItem {
   id: number;
   label: string;
   access_token_masked: string;
+  gmail_email: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -16,7 +17,15 @@ export interface TokenItem {
 
 export interface TokenStatus {
   has_active_token: boolean;
+  has_active_gmail: boolean;
+  active_gmail_email: string;
   tokens: TokenItem[];
+}
+
+export interface TokenSavePayload {
+  access_token: string;
+  gmail_email: string;
+  label?: string;
 }
 
 export interface GitHubUser {
@@ -64,5 +73,3 @@ export interface SentMailItem {
   sent_at: string;
   subject: string | null;
 }
-
-export type PageId = "dashboard" | "scraping" | "sending";

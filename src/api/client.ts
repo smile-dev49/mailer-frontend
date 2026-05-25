@@ -5,6 +5,7 @@ import type {
   ScraperStatus,
   SentMailItem,
   TokenItem,
+  TokenSavePayload,
   TokenStatus,
   UsersList,
 } from "../types";
@@ -32,10 +33,14 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
 export const api = {
   getTokens: () => request<TokenStatus>("/api/tokens"),
-  saveToken: (access_token: string, label = "default") =>
+  saveToken: (payload: TokenSavePayload) =>
     request<TokenItem>("/api/tokens", {
       method: "POST",
-      body: JSON.stringify({ access_token, label }),
+      body: JSON.stringify({
+        access_token: payload.access_token,
+        gmail_email: payload.gmail_email,
+        label: payload.label ?? "default",
+      }),
     }),
 
   getUsers: (page = 1, limit = 50) =>
