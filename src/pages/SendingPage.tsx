@@ -289,6 +289,7 @@ export function SendingPage() {
                 <tr>
                   <th>Email</th>
                   <th>Name</th>
+                  <th>Sent by</th>
                   <th>Sent at</th>
                 </tr>
               </thead>
@@ -297,6 +298,7 @@ export function SendingPage() {
                   <tr key={row.email + row.sent_at}>
                     <td>{row.email}</td>
                     <td>{row.name ?? "—"}</td>
+                    <td>{row.sender_label ?? "—"}</td>
                     <td>{new Date(row.sent_at).toLocaleString()}</td>
                   </tr>
                 ))}

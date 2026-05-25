@@ -152,4 +152,9 @@ export interface SentMailItem {
   name: string | null;
   sent_at: string;
   subject: string | null;
+  mail_worker_id?: number | null;
+  sender_first_name?: string | null;
+  sender_last_name?: string | null;
+  sender_gmail_email?: string | null;
+  sender_label?: string;
 }
