@@ -2,13 +2,23 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { ScrapedUserModal } from "../components/ScrapedUserModal";
+import { UserLocationFilters } from "../components/UserLocationFilters";
 import { ROUTES } from "../routes";
-import type { GitHubUser, ScraperLiveUser, ScraperStatus } from "../types";
+import type {
+  GitHubUser,
+  ScraperCountry,
+  ScraperLiveUser,
+  ScraperStatus,
+  UserFilterOptions,
+  UserFilters,
+} from "../types";
 
 const PAGE_SIZE = 20;
 
 export function ScrapingPage() {
   const [hasToken, setHasToken] = useState(false);
+  const [countries, setCountries] = useState<ScraperCountry[]>([]);
+  const [countryId, setCountryId] = useState<number | "">("");
   const [maxPerLocation, setMaxPerLocation] = useState(50);
   const [status, setStatus] = useState<ScraperStatus | null>(null);
   const [users, setUsers] = useState<GitHubUser[]>([]);
@@ -21,9 +31,14 @@ export function ScrapingPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const runningRef = useRef(false);
   const wasRunningRef = useRef(false);
+  const [filterOptions, setFilterOptions] = useState<UserFilterOptions>({
+    scrape_countries: [],
+    search_locations: [],
+  });
+  const [filters, setFilters] = useState<UserFilters>({});
 
-  const loadUsers = useCallback(async (p: number) => {
-    const data = await api.getUsers(p, PAGE_SIZE);
+  const loadUsers = useCallback(async (p: number, f: UserFilters = {}) => {
+    const data = await api.getUsers(p, PAGE_SIZE, f);
     setUsers(data.items);
     setTotalUsers(data.total);
     setPage(data.page);
@@ -32,13 +47,25 @@ export function ScrapingPage() {
   const refreshAll = useCallback(async () => {
     await Promise.all([
       api.getScraperStatus().then(setStatus),
-      loadUsers(page),
+      loadUsers(page, filters),
     ]);
-  }, [loadUsers, page]);
+  }, [loadUsers, page, filters]);
 
   useEffect(() => {
     api.getTokens().then((t) => setHasToken(t.has_active_token));
-    loadUsers(1).catch(() => {});
+    api
+      .getScraperCountries()
+      .then((list) => {
+        setCountries(list);
+        if (list.length > 0) {
+          setCountryId((prev) =>
+            prev === "" || !list.some((c) => c.id === prev) ? list[0].id : prev
+          );
+        }
+      })
+      .catch(() => {});
+    api.getUserFilterOptions().then(setFilterOptions).catch(() => {});
+    loadUsers(1, {}).catch(() => {});
 
     const poll = () =>
       api
@@ -65,21 +92,36 @@ export function ScrapingPage() {
   useEffect(() => {
     const running = status?.running ?? false;
     if (wasRunningRef.current && !running) {
-      loadUsers(1).catch(() => {});
+      loadUsers(1, filters).catch(() => {});
     }
     wasRunningRef.current = running;
-  }, [status?.running, loadUsers]);
+  }, [status?.running, loadUsers, filters]);
 
   useEffect(() => {
     if (!status?.running) return;
-    const id = setInterval(() => loadUsers(1).catch(() => {}), 5000);
+    const id = setInterval(() => loadUsers(1, filters).catch(() => {}), 5000);
     return () => clearInterval(id);
-  }, [status?.running, loadUsers]);
+  }, [status?.running, loadUsers, filters]);
+
+  function applyFilters() {
+    setPage(1);
+    loadUsers(1, filters).catch(() => {});
+  }
+
+  function clearFilters() {
+    setFilters({});
+    setPage(1);
+    loadUsers(1, {}).catch(() => {});
+  }
 
   async function startScraper() {
+    if (countryId === "") {
+      setMessage({ type: "err", text: "Select a country first" });
+      return;
+    }
     setMessage(null);
     try {
-      await api.startScraper(maxPerLocation);
+      await api.startScraper(countryId, maxPerLocation);
       setMessage({ type: "ok", text: "Scraper started" });
       runningRef.current = true;
       setStatus(await api.getScraperStatus());
@@ -104,8 +146,8 @@ export function ScrapingPage() {
       <header className="page-header">
         <h2>Scraping Setting</h2>
         <p>
-          Run the GitHub scraper, watch live results, and browse scraped users in the
-          table. Click View for full details.
+          Select a registered country, run the GitHub scraper, and browse scraped users.
+          Countries and location lists are stored in PostgreSQL.
         </p>
       </header>
 
@@ -130,15 +172,41 @@ export function ScrapingPage() {
               type="button"
               className="btn btn-primary"
               onClick={startScraper}
-              disabled={status?.running || !hasToken}
+              disabled={
+                status?.running || !hasToken || countryId === "" || countries.length === 0
+              }
             >
               {status?.running ? "Scraping…" : "Start scraper"}
             </button>
           </div>
         </div>
         <ScraperStatusBox status={status} dbTotal={dbTotal} />
-        <div className="field">
-          <label>Max users per location</label>
+        <div className="row">
+          <div className="field">
+            <label>Country</label>
+            {countries.length === 0 ? (
+              <p className="field-hint">
+                No countries in database. Run migrations 007 and 008 in{" "}
+                <code>database/migrations/</code>
+              </p>
+            ) : (
+              <select
+                value={countryId}
+                onChange={(e) =>
+                  setCountryId(e.target.value === "" ? "" : Number(e.target.value))
+                }
+                disabled={status?.running}
+              >
+                {countries.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} ({c.location_count} locations)
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+          <div className="field">
+            <label>Max users per location</label>
           <input
             type="number"
             min={1}
@@ -146,6 +214,7 @@ export function ScrapingPage() {
             value={maxPerLocation}
             onChange={(e) => setMaxPerLocation(Number(e.target.value))}
           />
+          </div>
         </div>
       </div>
 
@@ -173,9 +242,17 @@ export function ScrapingPage() {
           </button>
         </div>
 
+        <UserLocationFilters
+          filters={filters}
+          options={filterOptions}
+          onChange={setFilters}
+          onApply={applyFilters}
+          onClear={clearFilters}
+        />
+
         {users.length === 0 ? (
           <p className="field-hint">
-            No users in the database yet. Register a token and start the scraper.
+            No users match filters. Run the scraper or clear filters.
           </p>
         ) : (
           <>
@@ -185,7 +262,9 @@ export function ScrapingPage() {
                   <tr>
                     <th>Email</th>
                     <th>Name</th>
-                    <th>Location</th>
+                    <th>Country</th>
+                    <th>Search location</th>
+                    <th>Profile location</th>
                     <th>Updated</th>
                     <th></th>
                   </tr>
@@ -195,6 +274,10 @@ export function ScrapingPage() {
                     <tr key={u.email}>
                       <td>{u.email}</td>
                       <td>{u.name ?? "—"}</td>
+                      <td>{u.scrape_country || "—"}</td>
+                      <td className="cell-truncate" title={u.search_location}>
+                        {u.search_location || "—"}
+                      </td>
                       <td className="cell-truncate" title={u.location ?? undefined}>
                         {u.location ?? "—"}
                       </td>
@@ -223,7 +306,7 @@ export function ScrapingPage() {
                   type="button"
                   className="btn btn-secondary"
                   disabled={page <= 1}
-                  onClick={() => loadUsers(page - 1).catch(() => {})}
+                  onClick={() => loadUsers(page - 1, filters).catch(() => {})}
                 >
                   Previous
                 </button>
@@ -234,7 +317,7 @@ export function ScrapingPage() {
                   type="button"
                   className="btn btn-secondary"
                   disabled={page >= totalPages}
-                  onClick={() => loadUsers(page + 1).catch(() => {})}
+                  onClick={() => loadUsers(page + 1, filters).catch(() => {})}
                 >
                   Next
                 </button>
@@ -295,6 +378,12 @@ function ScraperStatusBox({
       )}
 
       <dl className="scraper-status__details">
+        {status.country_name && (
+          <>
+            <dt>Country</dt>
+            <dd>{status.country_name}</dd>
+          </>
+        )}
         {status.last_location && (
           <>
             <dt>Current location</dt>
@@ -307,11 +396,20 @@ function ScraperStatusBox({
             <dd>@{status.current_username}</dd>
           </>
         )}
+        <dt>Profiles checked</dt>
+        <dd>{status.profiles_checked ?? 0}</dd>
+        <dt>No public email</dt>
+        <dd>{status.skipped_no_email ?? 0}</dd>
         <dt>Collected this run</dt>
         <dd>{status.users_collected}</dd>
         <dt>Total in database</dt>
         <dd>{dbTotal}</dd>
       </dl>
+
+      <p className="field-hint">
+        Only GitHub profiles with a <strong>public email</strong> (joined 2022+) are saved.
+        Most users hide their email — a high “Profiles checked” count with 0 collected is normal.
+      </p>
 
       {status.error && <p className="text-error">{status.error}</p>}
     </div>
@@ -347,6 +445,8 @@ function LiveFeed({
             {u.name && <span className="live-feed__name"> — {u.name}</span>}
           </div>
           <div className="live-feed__meta">
+            {u.scrape_country && <span>{u.scrape_country}</span>}
+            {u.search_location && <span>{u.search_location}</span>}
             {u.location && <span>{u.location}</span>}
             {u.html_url && (
               <a href={u.html_url} target="_blank" rel="noreferrer">

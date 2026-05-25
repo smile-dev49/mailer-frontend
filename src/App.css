@@ -231,13 +231,18 @@
 }
 
 .field input,
-.field textarea {
+.field textarea,
+.field select {
   width: 100%;
   padding: 0.6rem 0.75rem;
   border: 1px solid #2d3139;
   border-radius: 8px;
   background: #0f1117;
   color: #e8eaed;
+}
+
+.field select {
+  cursor: pointer;
 }
 
 .password-input-wrap {
@@ -624,6 +629,21 @@
   background: rgba(0, 0, 0, 0.65);
 }
 
+.modal--compact {
+  max-width: 420px;
+}
+
+.modal--compact .modal__footer {
+  padding: 0 1.25rem 1.25rem;
+}
+
+.modal__confirm-text {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #e8eaed;
+}
+
 .modal {
   width: 100%;
   max-width: 560px;
@@ -744,4 +764,14 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.filter-bar {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #2d3139;
+}
+
+.filter-bar .row {
+  align-items: flex-end;
 }

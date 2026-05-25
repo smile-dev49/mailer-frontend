@@ -73,8 +73,21 @@ export interface GitHubUser {
   html_url: string | null;
   name: string | null;
   location: string | null;
+  scrape_country: string;
+  search_location: string;
   created_at: string | null;
   updated_at: string | null;
+}
+
+export interface UserFilters {
+  scrape_country?: string;
+  location?: string;
+  search_location?: string;
+}
+
+export interface UserFilterOptions {
+  scrape_countries: string[];
+  search_locations: string[];
 }
 
 export interface UsersList {
@@ -103,8 +116,17 @@ export interface ScraperLiveUser {
   email: string;
   name: string | null;
   location: string | null;
+  search_location?: string;
+  scrape_country?: string;
   html_url: string | null;
   scraped_at: string;
+}
+
+export interface ScraperCountry {
+  id: number;
+  code: string;
+  name: string;
+  location_count: number;
 }
 
 export interface ScraperStatus {
@@ -112,12 +134,17 @@ export interface ScraperStatus {
   message: string;
   users_collected: number;
   db_total: number;
+  country_id: number | null;
+  country_name: string;
   last_location: string;
   current_username: string;
   locations_done: number;
   locations_total: number;
   live_feed: ScraperLiveUser[];
   error: string | null;
+  profiles_checked?: number;
+  skipped_no_email?: number;
+  skipped_other?: number;
 }
 
 export interface SentMailItem {

@@ -52,7 +52,13 @@ export function ScrapedUserModal({ open, user, onClose }: Props) {
             <dt>Name</dt>
             <dd>{user.name ?? "—"}</dd>
 
-            <dt>Location</dt>
+            <dt>Scrape country</dt>
+            <dd>{user.scrape_country || "—"}</dd>
+
+            <dt>Search location</dt>
+            <dd>{user.search_location || "—"}</dd>
+
+            <dt>Profile location</dt>
             <dd>{user.location ?? "—"}</dd>
 
             <dt>GitHub profile</dt>

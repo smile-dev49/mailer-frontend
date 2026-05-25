@@ -4,11 +4,14 @@ import type {
   MailWorkerConfig,
   MailWorkerListItem,
   MailWorkerSavePayload,
+  ScraperCountry,
   ScraperStatus,
   SentMailItem,
   TokenItem,
   TokenSavePayload,
   TokenStatus,
+  UserFilterOptions,
+  UserFilters,
   UsersList,
 } from "../types";
 
@@ -17,6 +20,19 @@ const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/
 
 function apiUrl(path: string): string {
   return `${API_BASE}${path}`;
+}
+
+function appendUserFilters(params: URLSearchParams, filters?: UserFilters) {
+  if (!filters) return;
+  if (filters.scrape_country?.trim()) {
+    params.set("scrape_country", filters.scrape_country.trim());
+  }
+  if (filters.location?.trim()) {
+    params.set("location", filters.location.trim());
+  }
+  if (filters.search_location?.trim()) {
+    params.set("search_location", filters.search_location.trim());
+  }
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -45,14 +61,23 @@ export const api = {
       }),
     }),
 
-  getUsers: (page = 1, limit = 50) =>
-    request<UsersList>(`/api/users?page=${page}&limit=${limit}`),
+  getUserFilterOptions: () => request<UserFilterOptions>("/api/users/filters"),
 
+  getUsers: (page = 1, limit = 50, filters?: UserFilters) => {
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+    });
+    appendUserFilters(params, filters);
+    return request<UsersList>(`/api/users?${params}`);
+  },
+
+  getScraperCountries: () => request<ScraperCountry[]>("/api/scraper/countries"),
   getScraperStatus: () => request<ScraperStatus>("/api/scraper/status"),
-  startScraper: (max_per_location: number) =>
+  startScraper: (country_id: number, max_per_location: number) =>
     request<ScraperStatus>("/api/scraper/start", {
       method: "POST",
-      body: JSON.stringify({ max_per_location }),
+      body: JSON.stringify({ country_id, max_per_location }),
     }),
 
   listMailWorkers: () => request<MailWorkerListItem[]>("/api/mail-worker"),
@@ -73,11 +98,22 @@ export const api = {
       method: "POST",
     }),
 
-  getMailStats: () => request<MailStats>("/api/mail/stats"),
-  sendMailBatch: (limit?: number) =>
+  getMailStats: (filters?: UserFilters) => {
+    const params = new URLSearchParams();
+    appendUserFilters(params, filters);
+    const q = params.toString();
+    return request<MailStats>(`/api/mail/stats${q ? `?${q}` : ""}`);
+  },
+
+  sendMailBatch: (limit?: number, filters?: UserFilters) =>
     request<MailSendResult>("/api/mail/send", {
       method: "POST",
-      body: JSON.stringify({ limit: limit ?? null }),
+      body: JSON.stringify({
+        limit: limit ?? null,
+        scrape_country: filters?.scrape_country?.trim() || null,
+        location: filters?.location?.trim() || null,
+        search_location: filters?.search_location?.trim() || null,
+      }),
     }),
   listSent: (limit = 50) =>
     request<SentMailItem[]>(`/api/mail/sent?limit=${limit}`),

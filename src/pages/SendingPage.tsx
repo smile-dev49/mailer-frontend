@@ -1,7 +1,19 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../api/client";
 import { MailWorkerModal, type MailWorkerModalMode } from "../components/MailWorkerModal";
-import type { MailSendResult, MailStats, MailWorkerListItem, SentMailItem } from "../types";
+import {
+  formatMailWorkerSenderLabel,
+  SendBatchConfirmModal,
+} from "../components/SendBatchConfirmModal";
+import { UserLocationFilters } from "../components/UserLocationFilters";
+import type {
+  MailSendResult,
+  MailStats,
+  MailWorkerListItem,
+  SentMailItem,
+  UserFilterOptions,
+  UserFilters,
+} from "../types";
 
 export function SendingPage() {
   const [workers, setWorkers] = useState<MailWorkerListItem[]>([]);
@@ -15,23 +27,39 @@ export function SendingPage() {
   const [modalMode, setModalMode] = useState<MailWorkerModalMode>("create");
   const [modalWorkerId, setModalWorkerId] = useState<number | null>(null);
   const [sending, setSending] = useState(false);
+  const [confirmSendOpen, setConfirmSendOpen] = useState(false);
+  const [filterOptions, setFilterOptions] = useState<UserFilterOptions>({
+    scrape_countries: [],
+    search_locations: [],
+  });
+  const [filters, setFilters] = useState<UserFilters>({});
 
   const activeWorker = workers.find((w) => w.is_active);
 
   const refresh = useCallback(async () => {
     const [s, list, workerList] = await Promise.all([
-      api.getMailStats(),
+      api.getMailStats(filters),
       api.listSent(30),
       api.listMailWorkers(),
     ]);
     setStats(s);
     setSent(list);
     setWorkers(workerList);
-  }, []);
+  }, [filters]);
 
   useEffect(() => {
+    api.getUserFilterOptions().then(setFilterOptions).catch(() => {});
     refresh().catch(() => {});
   }, [refresh]);
+
+  function applyFilters() {
+    refresh().catch(() => {});
+  }
+
+  function clearFilters() {
+    setFilters({});
+    refresh().catch(() => {});
+  }
 
   function openRegister() {
     setModalMode("create");
@@ -59,20 +87,23 @@ export function SendingPage() {
     }
   }
 
-  async function handleSend() {
+  async function handleSend(): Promise<boolean> {
     setSending(true);
     setMessage(null);
     try {
       const result: MailSendResult = await api.sendMailBatch(
-        limit === "" ? undefined : Number(limit)
+        limit === "" ? undefined : Number(limit),
+        filters
       );
       setMessage({ type: "ok", text: result.message });
       await refresh();
+      return true;
     } catch (err) {
       setMessage({
         type: "err",
         text: err instanceof Error ? err.message : "Send failed",
       });
+      return false;
     } finally {
       setSending(false);
     }
@@ -200,6 +231,18 @@ export function SendingPage() {
             {activeWorker.sending_limit} per run)
           </p>
         )}
+        <UserLocationFilters
+          filters={filters}
+          options={filterOptions}
+          onChange={setFilters}
+          onApply={applyFilters}
+          onClear={clearFilters}
+          disabled={sending}
+        />
+        <p className="field-hint" style={{ marginBottom: "1rem" }}>
+          Stats and send apply to users matching the filters above (pending = not yet
+          sent).
+        </p>
         {stats && (
           <div className="stats-grid">
             <div className="stat-card">
@@ -230,7 +273,7 @@ export function SendingPage() {
           <button
             type="button"
             className="btn btn-primary"
-            onClick={handleSend}
+            onClick={() => setConfirmSendOpen(true)}
             disabled={sending || !canSend}
           >
             {sending ? "Sending…" : "Send next batch"}
@@ -262,6 +305,24 @@ export function SendingPage() {
           </div>
         )}
       </div>
+
+      {activeWorker && (
+        <SendBatchConfirmModal
+          open={confirmSendOpen}
+          senderLabel={formatMailWorkerSenderLabel(
+            activeWorker.first_name,
+            activeWorker.last_name,
+            activeWorker.gmail_email
+          )}
+          pendingCount={stats?.pending ?? 0}
+          confirming={sending}
+          onClose={() => setConfirmSendOpen(false)}
+          onConfirm={async () => {
+            const ok = await handleSend();
+            if (ok) setConfirmSendOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }
