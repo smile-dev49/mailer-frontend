@@ -59,11 +59,24 @@ export interface MailSendResult {
   message: string;
 }
 
+export interface ScraperLiveUser {
+  email: string;
+  name: string | null;
+  location: string | null;
+  html_url: string | null;
+  scraped_at: string;
+}
+
 export interface ScraperStatus {
   running: boolean;
   message: string;
   users_collected: number;
+  db_total: number;
   last_location: string;
+  current_username: string;
+  locations_done: number;
+  locations_total: number;
+  live_feed: ScraperLiveUser[];
   error: string | null;
 }
 

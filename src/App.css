@@ -395,3 +395,140 @@
   max-height: 220px;
   overflow-y: auto;
 }
+
+.scraper-status {
+  background: #1e3a5f33;
+  border: 1px solid #3b82f655;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  color: #e2e8f0;
+}
+
+.scraper-status--running {
+  border-color: #22c55e88;
+}
+
+.scraper-status__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.scraper-status__badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  background: #334155;
+  color: #94a3b8;
+}
+
+.scraper-status__badge.is-running {
+  background: #14532d;
+  color: #86efac;
+}
+
+.scraper-status__message {
+  color: #93c5fd;
+  flex: 1;
+  min-width: 12rem;
+}
+
+.scraper-status__progress {
+  margin-bottom: 0.75rem;
+}
+
+.scraper-status__progress-label {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-bottom: 0.35rem;
+}
+
+.scraper-status__progress-bar {
+  height: 6px;
+  background: #1e293b;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.scraper-status__progress-fill {
+  height: 100%;
+  background: #22c55e;
+  transition: width 0.4s ease;
+}
+
+.scraper-status__details {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 1rem;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.scraper-status__details dt {
+  color: #94a3b8;
+  margin: 0;
+}
+
+.scraper-status__details dd {
+  margin: 0;
+  color: #f1f5f9;
+}
+
+.live-feed {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 420px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.live-feed__item {
+  padding: 0.75rem 1rem;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 6px;
+}
+
+.live-feed__item--new {
+  border-color: #22c55e;
+  animation: live-feed-highlight 1.2s ease;
+}
+
+@keyframes live-feed-highlight {
+  0% {
+    background: #14532d66;
+  }
+  100% {
+    background: #0f172a;
+  }
+}
+
+.live-feed__main {
+  margin-bottom: 0.25rem;
+}
+
+.live-feed__name {
+  color: #94a3b8;
+  font-weight: normal;
+}
+
+.live-feed__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.live-feed__meta a {
+  color: #60a5fa;
+}
